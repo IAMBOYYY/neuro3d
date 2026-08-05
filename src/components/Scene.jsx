@@ -5,7 +5,6 @@ import * as THREE from 'three'
 import BrainModel from './BrainModel'
 import InternalStructures from './InternalStructures'
 import CameraRig from './CameraRig'
-import PostFX from './PostFX'
 import Particles from './Particles'
 import { SECTIONS } from '../data/brainSections'
 
@@ -14,9 +13,6 @@ function createSectionState() {
     activeIndex: 0,
     cerebrumOpacity: 1.0,
     activeRegion: null,
-    activeCenter: new THREE.Vector3(0, 0, 0),
-    activeRadius: 1.0,
-    activeIntensity: 0.0,
   }
 }
 
@@ -56,20 +52,20 @@ export default function Scene({ sectionCount }) {
     state.current.activeRegion = frac > 0.5 ? nxtRegion : curRegion
     state.current.activeIndex = Math.round(raw)
 
-    // Update progress bar
+    // Progress bar
     const progressBar = document.getElementById('progress-indicator')
     if (progressBar) {
       progressBar.style.width = `${scroll.offset * 100}%`
     }
 
-    // Update section counter
+    // Section counter
     const counter = document.getElementById('section-counter')
     if (counter) {
       const display = Math.min(idx + 1, SECTIONS.length)
       counter.innerHTML = `<span>${String(display).padStart(2, '0')}</span> / ${String(SECTIONS.length).padStart(2, '0')}`
     }
 
-    // Update overlay visibility
+    // Overlay visibility
     const sections = document.querySelectorAll('.section-content')
     sections.forEach((el, i) => {
       const dist = Math.abs(raw - i)
@@ -85,25 +81,17 @@ export default function Scene({ sectionCount }) {
     <>
       <CameraRig scroll={scroll} targets={cameraTargets} />
 
-      {/* Lighting */}
-      <ambientLight intensity={0.4} />
-      <directionalLight position={[5, 8, 6]} intensity={1.5} color="#ffffff" />
-      <directionalLight position={[-5, 3, -4]} intensity={0.6} color="#6ee7d7" />
-      <pointLight position={[0, -3, 3]} intensity={0.8} color="#c38d9e" />
-      <spotLight
-        position={[0, 5, 5]}
-        angle={0.5}
-        penumbra={1}
-        intensity={1.0}
-        color="#ffffff"
-      />
+      {/* Lighting — bright and reliable */}
+      <ambientLight intensity={0.6} />
+      <directionalLight position={[5, 8, 6]} intensity={2.0} color="#ffffff" />
+      <directionalLight position={[-5, 3, -4]} intensity={1.0} color="#6ee7d7" />
+      <pointLight position={[0, -3, 3]} intensity={1.5} color="#c38d9e" />
+      <pointLight position={[0, 5, 5]} intensity={1.0} color="#ffffff" />
 
-      <Particles count={600} />
+      <Particles count={400} />
 
       <BrainModel state={state} />
-      <InternalStructures state={state} regionData={{}} />
-
-      <PostFX />
+      <InternalStructures state={state} />
     </>
   )
 }
