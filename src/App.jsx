@@ -12,17 +12,12 @@ export default function App() {
       <Canvas
         gl={{
           antialias: true,
-          alpha: false,
+          alpha: true,
           powerPreference: 'high-performance',
-          toneMapping: 4, // ACESFilmicToneMapping
-          toneMappingExposure: 1.1,
         }}
         camera={{ fov: 45, near: 0.1, far: 100, position: [0, 0, 8] }}
-        dpr={[1, 2]}
+        dpr={[1, 1.5]}
       >
-        <color attach="background" args={['#040406']} />
-        <fog attach="fog" args={['#040406', 10, 25]} />
-
         <Suspense fallback={null}>
           <ScrollControls
             pages={SECTIONS.length}
@@ -36,6 +31,9 @@ export default function App() {
           </ScrollControls>
         </Suspense>
       </Canvas>
+
+      {/* CSS Vignette overlay */}
+      <div className="vignette-overlay" />
 
       <Loader />
       <div className="progress-indicator" id="progress-indicator" />
