@@ -359,6 +359,21 @@ canvas {
   letter-spacing: 0.1em;
 }
 
+/* ─── Vignette Overlay ───────────────────────────────────── */
+
+.vignette-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 30%,
+    rgba(0, 0, 0, 0.4) 70%,
+    rgba(0, 0, 0, 0.85) 100%
+  );
+}
+
 /* ─── Responsive ─────────────────────────────────────────── */
 
 @media (max-width: 768px) {
