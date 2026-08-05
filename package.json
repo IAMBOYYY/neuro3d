@@ -11,11 +11,11 @@
   "dependencies": {
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "three": "^0.160.0",
-    "@react-three/fiber": "^8.15.12",
-    "@react-three/drei": "^9.96.1",
-    "@react-three/postprocessing": "^2.15.11",
-    "postprocessing": "^6.35.3",
+    "three": "^0.169.0",
+    "@react-three/fiber": "^8.17.10",
+    "@react-three/drei": "^9.114.0",
+    "@react-three/postprocessing": "^2.16.3",
+    "postprocessing": "^6.36.4",
     "maath": "^0.10.7"
   },
   "devDependencies": {
