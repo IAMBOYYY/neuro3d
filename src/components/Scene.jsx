@@ -1,5 +1,6 @@
 import React, { useRef, useMemo } from 'react'
-import { useScroll, useFrame } from '@react-three/drei'
+import { useScroll } from '@react-three/drei'
+import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import BrainModel from './BrainModel'
 import InternalStructures from './InternalStructures'
