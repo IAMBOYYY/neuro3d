@@ -1,59 +1,92 @@
-import React, { useRef, useMemo, useEffect } from 'react'
+import React, { useRef, useMemo } from 'react'
 import { useFrame } from '@react-three/fiber'
+import { MeshDistortMaterial, Float } from '@react-three/drei'
 import * as THREE from 'three'
-import { createBrainMaterial } from '../shaders/brainShader'
 
-// ─── Cerebrum: large displaced icosphere ────────────────────
+// ─── Region Glow (replaces shader-based glow) ──────────────
+function RegionGlow({ position, color, regionName, state, radius = 0.6 }) {
+  const matRef = useRef()
+
+  useFrame(() => {
+    if (!matRef.current) return
+    const isActive = state.current.activeRegion === regionName
+    const target = isActive ? 0.8 : 0.0
+    matRef.current.opacity = THREE.MathUtils.lerp(
+      matRef.current.opacity,
+      target,
+      0.06,
+    )
+  })
+
+  return (
+    <mesh position={position}>
+      <sphereGeometry args={[radius, 32, 32]} />
+      <meshStandardMaterial
+        ref={matRef}
+        color={color}
+        emissive={color}
+        emissiveIntensity={2.5}
+        transparent
+        opacity={0}
+        depthWrite={false}
+        blending={THREE.AdditiveBlending}
+      />
+    </mesh>
+  )
+}
+
+// ─── Cerebrum ───────────────────────────────────────────────
 function CerebrumMesh({ state }) {
   const meshRef = useRef()
-  const material = useMemo(() => createBrainMaterial(), [])
+  const matRef = useRef()
 
-  // High-detail icosphere for smooth gyri displacement
   const geometry = useMemo(() => {
-    const geo = new THREE.IcosahedronGeometry(1.4, 64) // detail 64 = lots of verts
-    // Store original positions for shader reference
-    const positions = geo.attributes.position
-    geo.setAttribute('originalPosition', positions.clone())
-    return geo
+    return new THREE.IcosahedronGeometry(1.4, 20)
   }, [])
 
   useFrame((_, delta) => {
     if (!meshRef.current) return
+    meshRef.current.rotation.y += delta * 0.04
 
-    // Slow rotation for life
-    meshRef.current.rotation.y += delta * 0.05
-
-    // Update shader uniforms
-    const mat = meshRef.current.material
-    mat.uniforms.uTime.value += delta
-    mat.uniforms.uOpacity.value = THREE.MathUtils.lerp(
-      mat.uniforms.uOpacity.value,
-      state.current.cerebrumOpacity,
-      0.06,
-    )
-    mat.uniforms.uActiveIntensity.value = state.current.activeIntensity
-    mat.uniforms.uActiveCenter.value.copy(state.current.activeCenter)
-    mat.uniforms.uActiveRadius.value = state.current.activeRadius
+    if (matRef.current) {
+      const targetOpacity = state.current.cerebrumOpacity
+      matRef.current.opacity = THREE.MathUtils.lerp(
+        matRef.current.opacity,
+        targetOpacity,
+        0.06,
+      )
+      matRef.current.transparent = targetOpacity < 0.99
+    }
   })
 
   return (
-    <mesh ref={meshRef} geometry={geometry} material={material} />
+    <mesh ref={meshRef} geometry={geometry}>
+      <MeshDistortMaterial
+        ref={matRef}
+        color="#c4a0a0"
+        roughness={0.35}
+        metalness={0.0}
+        clearcoat={0.4}
+        clearcoatRoughness={0.5}
+        distort={0.35}
+        speed={1.2}
+        transparent
+        opacity={1.0}
+      />
+    </mesh>
   )
 }
 
-// ─── Cerebellum: smaller textured sphere at back-bottom ─────
+// ─── Cerebellum ─────────────────────────────────────────────
 function CerebellumMesh({ state }) {
   const meshRef = useRef()
-  const material = useMemo(() => createBrainMaterial(), [])
+  const matRef = useRef()
 
   const geometry = useMemo(() => {
-    // Slightly oblong for cerebellum shape
-    const geo = new THREE.IcosahedronGeometry(0.55, 32)
-    const positions = geo.attributes.position
-    // Squash slightly
-    for (let i = 0; i < positions.count; i++) {
-      const y = positions.getY(i)
-      positions.setY(i, y * 0.7)
+    const geo = new THREE.IcosahedronGeometry(0.55, 16)
+    const pos = geo.attributes.position
+    for (let i = 0; i < pos.count; i++) {
+      pos.setY(i, pos.getY(i) * 0.7)
     }
     geo.computeVertexNormals()
     return geo
@@ -63,42 +96,44 @@ function CerebellumMesh({ state }) {
     if (!meshRef.current) return
     meshRef.current.rotation.y += delta * 0.03
 
-    const mat = meshRef.current.material
-    mat.uniforms.uTime.value += delta
-    // Cerebellum fades with cerebrum
-    mat.uniforms.uOpacity.value = THREE.MathUtils.lerp(
-      mat.uniforms.uOpacity.value,
-      state.current.cerebrumOpacity * 0.9,
-      0.06,
-    )
-    // Tighter gyri for cerebellum
-    mat.uniforms.uGyriFrequency.value = 8.0
-    mat.uniforms.uDisplacementScale.value = 0.04
-
-    // Highlight when brainstem section is active
-    mat.uniforms.uActiveIntensity.value =
-      state.current.activeRegion === 'brainstem' ? state.current.activeIntensity * 0.5 : 0
+    if (matRef.current) {
+      const target = state.current.cerebrumOpacity * 0.9
+      matRef.current.opacity = THREE.MathUtils.lerp(
+        matRef.current.opacity,
+        target,
+        0.06,
+      )
+      matRef.current.transparent = target < 0.99
+    }
   })
 
   return (
-    <mesh ref={meshRef} geometry={geometry} material={material} position={[0, -1.6, -0.3]} />
+    <mesh ref={meshRef} geometry={geometry} position={[0, -1.6, -0.3]}>
+      <MeshDistortMaterial
+        ref={matRef}
+        color="#b08e8e"
+        roughness={0.4}
+        metalness={0.0}
+        distort={0.45}
+        speed={2.0}
+        transparent
+        opacity={0.9}
+      />
+    </mesh>
   )
 }
 
-// ─── Brainstem: tapered cylinder ────────────────────────────
+// ─── Brainstem ──────────────────────────────────────────────
 function BrainstemMesh({ state }) {
   const meshRef = useRef()
-  const material = useMemo(() => createBrainMaterial(), [])
+  const matRef = useRef()
 
   const geometry = useMemo(() => {
-    const geo = new THREE.CylinderGeometry(0.18, 0.12, 1.2, 32, 16)
-    // Slight curve
-    const positions = geo.attributes.position
-    for (let i = 0; i < positions.count; i++) {
-      const y = positions.getY(i)
-      const z = positions.getZ(i)
-      // Curve backward slightly
-      positions.setZ(i, z + Math.sin(y * 0.8) * 0.08)
+    const geo = new THREE.CylinderGeometry(0.2, 0.14, 1.2, 32, 16)
+    const pos = geo.attributes.position
+    for (let i = 0; i < pos.count; i++) {
+      const y = pos.getY(i)
+      pos.setZ(i, pos.getZ(i) + Math.sin(y * 0.8) * 0.08)
     }
     geo.computeVertexNormals()
     return geo
@@ -106,40 +141,53 @@ function BrainstemMesh({ state }) {
 
   useFrame((_, delta) => {
     if (!meshRef.current) return
-    const mat = meshRef.current.material
-    mat.uniforms.uTime.value += delta
-    mat.uniforms.uOpacity.value = THREE.MathUtils.lerp(
-      mat.uniforms.uOpacity.value,
-      state.current.cerebrumOpacity * 0.95,
-      0.06,
-    )
-    mat.uniforms.uGyriFrequency.value = 15.0
-    mat.uniforms.uDisplacementScale.value = 0.015
+    if (matRef.current) {
+      const target = state.current.cerebrumOpacity * 0.95
+      matRef.current.opacity = THREE.MathUtils.lerp(
+        matRef.current.opacity,
+        target,
+        0.06,
+      )
+      matRef.current.transparent = target < 0.99
 
-    mat.uniforms.uActiveIntensity.value =
-      state.current.activeRegion === 'brainstem' ? state.current.activeIntensity : 0
-    mat.uniforms.uActiveCenter.value.set(0, 0, 0) // local space
-    mat.uniforms.uActiveRadius.value = 2.0
+      // Glow when brainstem section is active
+      const isGlowing = state.current.activeRegion === 'brainstem'
+      const glowTarget = isGlowing ? 0.8 : 0.0
+      matRef.current.emissiveIntensity = THREE.MathUtils.lerp(
+        matRef.current.emissiveIntensity || 0,
+        glowTarget,
+        0.06,
+      )
+    }
   })
 
   return (
     <mesh
       ref={meshRef}
       geometry={geometry}
-      material={material}
       position={[0, -2.2, -0.1]}
       rotation={[0.15, 0, 0]}
-    />
+    >
+      <meshStandardMaterial
+        ref={matRef}
+        color="#a08080"
+        roughness={0.5}
+        metalness={0.0}
+        emissive="#6ee7d7"
+        emissiveIntensity={0}
+        transparent
+        opacity={0.95}
+      />
+    </mesh>
   )
 }
 
-// ─── Corpus Callosum: curved bridge between hemispheres ─────
+// ─── Corpus Callosum ────────────────────────────────────────
 function CorpusCallosumMesh({ state }) {
   const meshRef = useRef()
-  const material = useMemo(() => createBrainMaterial(), [])
+  const matRef = useRef()
 
   const geometry = useMemo(() => {
-    // Create a curved tube geometry
     const curve = new THREE.CatmullRomCurve3([
       new THREE.Vector3(-0.9, 0.15, 0),
       new THREE.Vector3(-0.4, 0.3, 0),
@@ -147,41 +195,82 @@ function CorpusCallosumMesh({ state }) {
       new THREE.Vector3(0.4, 0.3, 0),
       new THREE.Vector3(0.9, 0.15, 0),
     ])
-    const geo = new THREE.TubeGeometry(curve, 64, 0.12, 16, false)
-    return geo
+    return new THREE.TubeGeometry(curve, 64, 0.12, 16, false)
   }, [])
 
   useFrame((_, delta) => {
     if (!meshRef.current) return
-    const mat = meshRef.current.material
-    mat.uniforms.uTime.value += delta
+    if (matRef.current) {
+      const isCorpusActive = state.current.activeRegion === 'corpus'
+      const cerebrumTransparent = state.current.cerebrumOpacity < 0.4
 
-    // Corpus callosum visible when cerebrum is transparent
-    const targetOpacity = state.current.activeRegion === 'corpus'
-      ? 0.85
-      : state.current.cerebrumOpacity < 0.4 ? 0.6 : 0.15
+      const target = isCorpusActive
+        ? 0.9
+        : cerebrumTransparent
+          ? 0.5
+          : 0.15
 
-    mat.uniforms.uOpacity.value = THREE.MathUtils.lerp(
-      mat.uniforms.uOpacity.value,
-      targetOpacity,
-      0.06,
-    )
-    mat.uniforms.uDisplacementScale.value = 0.01
-    mat.uniforms.uGyriFrequency.value = 20.0
-    mat.uniforms.uActiveIntensity.value = 0
+      matRef.current.opacity = THREE.MathUtils.lerp(
+        matRef.current.opacity,
+        target,
+        0.06,
+      )
+
+      const glowTarget = isCorpusActive ? 1.5 : 0.0
+      matRef.current.emissiveIntensity = THREE.MathUtils.lerp(
+        matRef.current.emissiveIntensity || 0,
+        glowTarget,
+        0.06,
+      )
+    }
   })
 
-  return <mesh ref={meshRef} geometry={geometry} material={material} />
+  return (
+    <mesh ref={meshRef} geometry={geometry}>
+      <meshStandardMaterial
+        ref={matRef}
+        color="#a78bfa"
+        roughness={0.3}
+        metalness={0.1}
+        emissive="#a78bfa"
+        emissiveIntensity={0}
+        transparent
+        opacity={0.15}
+      />
+    </mesh>
+  )
 }
 
 // ─── Main Brain Model ───────────────────────────────────────
 export default function BrainModel({ state }) {
   return (
     <group>
-      <CerebrumMesh state={state} />
-      <CerebellumMesh state={state} />
+      <Float speed={1.5} rotationIntensity={0.3} floatIntensity={0.4}>
+        <CerebrumMesh state={state} />
+      </Float>
+
+      <Float speed={1.2} rotationIntensity={0.2} floatIntensity={0.3}>
+        <CerebellumMesh state={state} />
+      </Float>
+
       <BrainstemMesh state={state} />
       <CorpusCallosumMesh state={state} />
+
+      {/* Region glow markers */}
+      <RegionGlow
+        position={[0.85, 0.3, 0.6]}
+        color="#7dd3fc"
+        radius={0.7}
+        regionName="prefrontal"
+        state={state}
+      />
+      <RegionGlow
+        position={[0, 0, 0]}
+        color="#6ee7d7"
+        radius={1.2}
+        regionName="cerebrum"
+        state={state}
+      />
     </group>
   )
 }
