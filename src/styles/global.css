@@ -1,5 +1,5 @@
 :root {
-  --bg: #040406;
+  --bg: #060608;
   --fg: #e8e6e3;
   --fg-dim: #8a8783;
   --accent: #6ee7d7;
@@ -15,28 +15,38 @@
   box-sizing: border-box;
 }
 
-html,
+html {
+  overflow-x: hidden;
+  overflow-y: auto;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
 body {
   width: 100%;
-  height: 100%;
-  overflow: hidden;
   background: var(--bg);
   color: var(--fg);
   font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
 }
 
 #root {
-  width: 100vw;
-  height: 100vh;
+  width: 100%;
   position: relative;
 }
 
-.app {
-  width: 100%;
-  height: 100%;
-  position: relative;
+/* ─── Canvas (Fixed behind content) ─────────────────────── */
+
+.canvas-fixed {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 1;
+  pointer-events: none;
 }
 
 canvas {
@@ -44,20 +54,17 @@ canvas {
   touch-action: none;
 }
 
-/* ─── Scroll Overlay ─────────────────────────────────────── */
+/* ─── Content (Scrollable, on top) ───────────────────────── */
 
-.scroll-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
+.content-scroll {
+  position: relative;
   z-index: 10;
-  pointer-events: none;
+  width: 100%;
 }
 
 .scroll-section {
   width: 100vw;
-  height: 100vh;
+  min-height: 100vh;
   display: flex;
   align-items: center;
   padding: 0 8vw;
@@ -74,13 +81,14 @@ canvas {
 
 .scroll-section--center {
   justify-content: center;
+  text-align: center;
 }
 
 .section-content {
   max-width: 520px;
   opacity: 0;
   transform: translateY(40px);
-  transition: opacity 0.6s ease, transform 0.6s ease;
+  transition: opacity 0.8s ease, transform 0.8s ease;
 }
 
 .section-content.is-visible {
@@ -173,11 +181,7 @@ canvas {
   transform: translateY(-1px);
 }
 
-/* ─── Hero / Intro ───────────────────────────────────────── */
-
-.hero-section {
-  text-align: center;
-}
+/* ─── Hero ───────────────────────────────────────────────── */
 
 .hero-section .section-content {
   max-width: 720px;
@@ -241,7 +245,7 @@ canvas {
   50% { opacity: 0.9; }
 }
 
-/* ─── Progress Indicator ─────────────────────────────────── */
+/* ─── Progress Bar ───────────────────────────────────────── */
 
 .progress-indicator {
   position: fixed;
@@ -254,7 +258,7 @@ canvas {
   transition: width 0.1s linear;
 }
 
-/* ─── Nav / Branding ─────────────────────────────────────── */
+/* ─── Nav ────────────────────────────────────────────────── */
 
 .nav-bar {
   position: fixed;
@@ -336,30 +340,20 @@ canvas {
   margin-bottom: 2rem;
 }
 
-.loader-bar {
-  width: 200px;
-  height: 2px;
-  background: rgba(255, 255, 255, 0.08);
-  border-radius: 2px;
-  overflow: hidden;
+.loader-spinner {
+  width: 40px;
+  height: 40px;
+  border: 2px solid rgba(110, 231, 215, 0.1);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
 }
 
-.loader-bar-fill {
-  height: 100%;
-  width: 0%;
-  background: linear-gradient(90deg, var(--accent), var(--accent-deep));
-  transition: width 0.3s ease;
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
-.loader-percent {
-  font-family: var(--font-display);
-  font-size: 0.7rem;
-  color: var(--fg-dim);
-  margin-top: 1rem;
-  letter-spacing: 0.1em;
-}
-
-/* ─── Vignette Overlay ───────────────────────────────────── */
+/* ─── Vignette ───────────────────────────────────────────── */
 
 .vignette-overlay {
   position: fixed;
@@ -368,9 +362,9 @@ canvas {
   z-index: 5;
   background: radial-gradient(
     ellipse at center,
-    transparent 30%,
-    rgba(0, 0, 0, 0.4) 70%,
-    rgba(0, 0, 0, 0.85) 100%
+    transparent 35%,
+    rgba(0, 0, 0, 0.3) 70%,
+    rgba(0, 0, 0, 0.8) 100%
   );
 }
 
