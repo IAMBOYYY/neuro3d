@@ -1,7 +1,3 @@
-// ─── Brain Section Data ─────────────────────────────────────
-// Each section maps to a scroll page. Camera position, brain part
-// highlighting, and overlay content are all driven from this data.
-
 export const SECTIONS = [
   {
     id: 'intro',
@@ -12,7 +8,7 @@ export const SECTIONS = [
     subtitle: 'A three-dimensional journey through consciousness, memory, and thought',
     body: '',
     facts: [],
-    cameraPos: [0, 0, 8],
+    cameraPos: [0, 0.5, 7],
     lookAt: [0, 0, 0],
     activeRegion: null,
     cerebrumOpacity: 1.0,
@@ -30,7 +26,7 @@ export const SECTIONS = [
       'Cortical thickness: 2–4 mm',
       'Two hemispheres connected by the corpus callosum',
     ],
-    cameraPos: [0, 0.5, 5.5],
+    cameraPos: [0, 0.5, 5],
     lookAt: [0, 0, 0],
     activeRegion: 'cerebrum',
     cerebrumOpacity: 1.0,
@@ -49,7 +45,7 @@ export const SECTIONS = [
       'Highly connected to limbic system for emotional regulation',
     ],
     cameraPos: [2.5, 0.8, 3.5],
-    lookAt: [0.8, 0.3, 0],
+    lookAt: [0.8, 0.3, 0.5],
     activeRegion: 'prefrontal',
     cerebrumOpacity: 0.9,
   },
@@ -66,7 +62,7 @@ export const SECTIONS = [
       'Critical for spatial navigation (place cells, 2014 Nobel Prize)',
       'Damaged in Alzheimer\'s disease — memory loss is an early symptom',
     ],
-    cameraPos: [-2.5, -0.3, 3.8],
+    cameraPos: [-2.5, -0.3, 3.5],
     lookAt: [-0.6, -0.4, 0.2],
     activeRegion: 'hippocampus',
     cerebrumOpacity: 0.15,
@@ -85,7 +81,7 @@ export const SECTIONS = [
       'Forms emotional memories that bypass conscious recall',
     ],
     cameraPos: [2.2, -0.5, 3.2],
-    lookAt: [0.7, -0.5, 0.1],
+    lookAt: [0.7, -0.5, 0.3],
     activeRegion: 'amygdala',
     cerebrumOpacity: 0.12,
   },
@@ -102,7 +98,7 @@ export const SECTIONS = [
       'Severing it treats severe epilepsy (split-brain procedure)',
       'Thicker in females on average — debated implications',
     ],
-    cameraPos: [0, 1.2, 4],
+    cameraPos: [0, 1.5, 3.5],
     lookAt: [0, 0.1, 0],
     activeRegion: 'corpus',
     cerebrumOpacity: 0.2,
