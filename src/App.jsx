@@ -1,55 +1,149 @@
-import React, { useRef, useMemo } from 'react'
-import { Canvas, useFrame } from '@react-three/fiber'
+import React, { useRef, useEffect, useState, Suspense } from 'react'
+import { Canvas } from '@react-three/fiber'
 import * as THREE from 'three'
+import Scene from './components/Scene'
+import { SECTIONS } from './data/brainSections'
 import './styles/global.css'
 
-function Brain() {
-  const meshRef = useRef()
+// ─── Loader ─────────────────────────────────────────────────
+function Loader() {
+  const [hidden, setHidden] = useState(false)
 
-  const geometry = useMemo(() => {
-    const geo = new THREE.IcosahedronGeometry(1.5, 12)
-    const pos = geo.attributes.position
-    const orig = pos.array.slice()
-
-    for (let i = 0; i < pos.count; i++) {
-      const ox = orig[i * 3]
-      const oy = orig[i * 3 + 1]
-      const oz = orig[i * 3 + 2]
-      const n = Math.sin(ox * 5) * Math.cos(oy * 5) * 0.08 + Math.sin(oz * 10) * 0.03
-      const len = Math.sqrt(ox * ox + oy * oy + oz * oz)
-      pos.setXYZ(i, ox + (ox / len) * n, oy + (oy / len) * n, oz + (oz / len) * n)
-    }
-    geo.computeVertexNormals()
-    return geo
+  useEffect(() => {
+    const timer = setTimeout(() => setHidden(true), 1500)
+    return () => clearTimeout(timer)
   }, [])
 
-  useFrame((_, delta) => {
-    if (meshRef.current) {
-      meshRef.current.rotation.y += delta * 0.1
-    }
-  })
-
   return (
-    <mesh ref={meshRef} geometry={geometry}>
-      <meshStandardMaterial
-        color="#ff4488"
-        emissive="#ff4488"
-        emissiveIntensity={0.4}
-        roughness={0.3}
-      />
-    </mesh>
+    <div className={`loader ${hidden ? 'is-hidden' : ''}`}>
+      <div className="loader-text">Initializing Neural Pathways</div>
+      <div className="loader-spinner" />
+    </div>
   )
 }
 
+// ─── Main App ───────────────────────────────────────────────
 export default function App() {
+  const scrollRef = useRef(0)
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const max = document.documentElement.scrollHeight - window.innerHeight
+      const progress = max > 0 ? window.scrollY / max : 0
+      scrollRef.current = progress
+
+      // Progress bar
+      const progressBar = document.getElementById('progress-indicator')
+      if (progressBar) {
+        progressBar.style.width = `${progress * 100}%`
+      }
+
+      // Section counter
+      const counter = document.getElementById('section-counter')
+      if (counter) {
+        const raw = progress * (SECTIONS.length - 1)
+        const display = Math.min(Math.floor(raw) + 1, SECTIONS.length)
+        counter.innerHTML = `<span>${String(display).padStart(2, '0')}</span> / ${String(SECTIONS.length).padStart(2, '0')}`
+      }
+
+      // Section visibility
+      const raw = progress * (SECTIONS.length - 1)
+      const sections = document.querySelectorAll('.section-content')
+      sections.forEach((el, i) => {
+        if (Math.abs(raw - i) < 0.4) {
+          el.classList.add('is-visible')
+        } else {
+          el.classList.remove('is-visible')
+        }
+      })
+    }
+
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    handleScroll()
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
+
   return (
-    <div style={{ width: '100vw', height: '100vh', background: '#0a0a0a' }}>
-      <Canvas camera={{ position: [0, 0, 8], fov: 45 }}>
-        <ambientLight intensity={0.8} />
-        <directionalLight position={[5, 5, 5]} intensity={2.0} color="#ffffff" />
-        <pointLight position={[-5, -5, 5]} intensity={2.0} color="#6ee7d7" />
-        <Brain />
-      </Canvas>
+    <div className="app">
+      {/* Fixed 3D Canvas */}
+      <div className="canvas-fixed">
+        <Canvas
+          camera={{ fov: 45, near: 0.1, far: 100, position: [0, 0.5, 7] }}
+          gl={{ antialias: true, alpha: true }}
+        >
+          <Suspense fallback={null}>
+            <Scene scrollRef={scrollRef} />
+          </Suspense>
+        </Canvas>
+      </div>
+
+      {/* Vignette overlay */}
+      <div className="vignette-overlay" />
+
+      {/* Nav bar */}
+      <div className="nav-bar">
+        <div className="brand">
+          <span className="brand-dot" />
+          Neuro3D
+        </div>
+        <div className="section-counter" id="section-counter">
+          <span>01</span> / {String(SECTIONS.length).padStart(2, '0')}
+        </div>
+      </div>
+
+      {/* Scrollable content */}
+      <div className="content-scroll">
+        {SECTIONS.map((section, i) => {
+          if (section.isHero) {
+            return (
+              <section
+                key={section.id}
+                className="scroll-section scroll-section--center hero-section"
+              >
+                <div className="section-content">
+                  <h1 className="hero-title">
+                    {section.title.main}
+                    <span>{section.title.accent}</span>
+                  </h1>
+                  <p className="hero-subtitle">{section.subtitle}</p>
+                </div>
+                <div className="scroll-hint">Scroll to explore</div>
+              </section>
+            )
+          }
+
+          return (
+            <section
+              key={section.id}
+              className={`scroll-section scroll-section--${section.layout}`}
+            >
+              <div className="section-content">
+                <div className="section-index">
+                  {String(i).padStart(2, '0')} — {section.label}
+                </div>
+                <h2 className="section-title">
+                  {section.title.main} <em>{section.title.accent}</em>
+                </h2>
+                <p className="section-subtitle">{section.subtitle}</p>
+                <p className="section-body">{section.body}</p>
+                {section.facts.length > 0 && (
+                  <div className="section-facts">
+                    {section.facts.map((fact, j) => (
+                      <div key={j} className="fact">{fact}</div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </section>
+          )
+        })}
+      </div>
+
+      {/* Progress bar */}
+      <div className="progress-indicator" id="progress-indicator" />
+
+      {/* Loader */}
+      <Loader />
     </div>
   )
-        }
+}
